@@ -2,7 +2,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData, useNavigation } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
-import { Col, Container, Row } from "react-bootstrap";
+import { Breadcrumb, Col, Container, Row } from "react-bootstrap";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import invariant from "tiny-invariant";
 import { z } from "zod";
@@ -61,6 +61,15 @@ export default function EditSchema() {
 
   return (
     <Container>
+      <Row>
+        <Col>
+          <Breadcrumb>
+            <Breadcrumb.Item href="/">Home</Breadcrumb.Item>
+            <Breadcrumb.Item href="/edit">Edit Forms</Breadcrumb.Item>
+            <Breadcrumb.Item active>Edit {formName}</Breadcrumb.Item>
+          </Breadcrumb>
+        </Col>
+      </Row>
       <Row>
         <Col>
           <h1>Edit Schema</h1>

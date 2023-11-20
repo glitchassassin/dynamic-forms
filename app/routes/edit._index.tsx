@@ -19,13 +19,13 @@ export default function SubmitForm() {
         <Col>
           <Breadcrumb>
             <Breadcrumb.Item href="/">Home</Breadcrumb.Item>
-            <Breadcrumb.Item active>Submit Forms</Breadcrumb.Item>
+            <Breadcrumb.Item active>Edit Forms</Breadcrumb.Item>
           </Breadcrumb>
         </Col>
       </Row>
       <Row>
         <Col>
-          <h1>Select Form</h1>
+          <h1>Edit Form</h1>
         </Col>
       </Row>
       <Row>
@@ -33,7 +33,7 @@ export default function SubmitForm() {
           <ul>
             {formSchemaList.map((form) => (
               <li key={form._id}>
-                <Link to={`/submit/${form._id}`}>{form.name}</Link>
+                <Link to={`/edit/${form._id}`}>{form.name}</Link>
               </li>
             ))}
           </ul>

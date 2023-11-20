@@ -1,34 +1,29 @@
 import type { MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
+import { Container } from "react-bootstrap";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "New Remix App" },
+    { title: "Dynamic Forms" },
     { name: "description", content: "Welcome to Remix!" },
   ];
 };
 
 export default function Index() {
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}>
+    <Container>
       <h1>Remix Dynamic Forms</h1>
       <ul>
         <li>
-          <Link to="/edit/">
-            Edit Schema
-          </Link>
+          <Link to="/edit/">Edit Forms</Link>
         </li>
         <li>
-          <Link to="/submit/">
-            Submit Form
-          </Link>
+          <Link to="/submit/">Submit Forms</Link>
         </li>
         <li>
-          <Link to="/resuilts/">
-            View Results
-          </Link>
+          <Link to="/resuilts/">View Results</Link>
         </li>
       </ul>
-    </div>
+    </Container>
   );
 }

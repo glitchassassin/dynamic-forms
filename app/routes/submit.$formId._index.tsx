@@ -4,7 +4,7 @@ import { useFetcher, useLoaderData } from "@remix-run/react";
 import type { IChangeEvent } from "@rjsf/core";
 import Form from "@rjsf/core";
 import validator from "@rjsf/validator-ajv8";
-import { Col, Container, Row } from "react-bootstrap";
+import { Breadcrumb, Col, Container, Row } from "react-bootstrap";
 import { ClientOnly } from "remix-utils/client-only";
 import invariant from "tiny-invariant";
 import { getFormSchema } from "~/db/formSchema.server";
@@ -54,6 +54,15 @@ export default function SubmitForm() {
   };
   return (
     <Container>
+      <Row>
+        <Col>
+          <Breadcrumb>
+            <Breadcrumb.Item href="/">Home</Breadcrumb.Item>
+            <Breadcrumb.Item href="/submit">Submit Forms</Breadcrumb.Item>
+            <Breadcrumb.Item active>Submit {name}</Breadcrumb.Item>
+          </Breadcrumb>
+        </Col>
+      </Row>
       <Row>
         <Col>
           <h1>Submit {name}</h1>
