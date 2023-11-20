@@ -1,8 +1,8 @@
-version: '3.8'
+version: "3.8"
 
 services:
   app:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
     volumes:
@@ -11,11 +11,14 @@ services:
     # Overrides default command so things don't shut down after the process ends.
     command: sleep infinity
 
+    networks:
+      mongo:
+
     # Runs app on the same network as the database container, allows "forwardPorts" in devcontainer.json function.
     environment:
-      MONGO_URL: mongodb://root:passw0rd@db:27017/dynamic-forms
+      MONGO_URL: mongodb://db:27017/
 
-    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally. 
+    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally.
     # (Adding the "ports" property to this file will not forward from a Codespace.)
 
   db:
@@ -25,13 +28,19 @@ services:
       - mongodb-data:/data/db
 
     # Uncomment to change startup options
-    environment:
-     MONGO_INITDB_ROOT_USERNAME: root
-     MONGO_INITDB_ROOT_PASSWORD: passw0rd
-     MONGO_INITDB_DATABASE: dynamic-forms
+    # environment:
+    #   MONGO_INITDB_ROOT_USERNAME: root
+    #   MONGO_INITDB_ROOT_PASSWORD: passw0rd
+    #   MONGO_INITDB_DATABASE: dynamic-forms
+
+    networks:
+      mongo:
 
     # Add "forwardPorts": ["27017"] to **devcontainer.json** to forward MongoDB locally.
     # (Adding the "ports" property to this file will not forward from a Codespace.)
 
 volumes:
   mongodb-data:
+
+networks:
+  mongo:
