@@ -1,9 +1,10 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 import { useLoaderData, useNavigation } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
 import { Col, Container, Row } from "react-bootstrap";
 import { ValidatedForm, validationError } from "remix-validated-form";
+import invariant from "tiny-invariant";
 import { z } from "zod";
 import { SubmitButton } from "~/components/SubmitButton";
 import { TextInput } from "~/components/TextInput";
@@ -18,9 +19,12 @@ const validator = withZod(
   })
 );
 
-export const loader = async () => {
+export const loader = async ({ params }: LoaderFunctionArgs) => {
+  const formId = params.formId;
+  invariant(typeof formId === "string", "Form ID not found.");
+
   // load form from MongoDB
-  const result = await getFormSchema();
+  const result = await getFormSchema(formId);
 
   return json({
     formId: result?._id ?? "",
@@ -31,8 +35,6 @@ export const loader = async () => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const result = await validator.validate(await request.formData());
-
-  console.log("result", result);
 
   if (result.error) {
     return validationError(result.error);
@@ -50,11 +52,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return json({ error: "Failed to save form." }, { status: 500 });
   }
 
-  return json({
-    formId: formSchema._id,
-    formName: formSchema.name,
-    formSchema: formSchema.schema,
-  });
+  return redirect(`/edit/${formSchema._id}`);
 };
 
 export default function EditSchema() {

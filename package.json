@@ -15,12 +15,17 @@
     "@remix-run/react": "^2.3.0",
     "@remix-run/serve": "^2.3.0",
     "@remix-validated-form/with-zod": "^2.0.7",
+    "@rjsf/core": "^5.14.2",
+    "@rjsf/utils": "^5.14.2",
+    "@rjsf/validator-ajv8": "^5.14.2",
     "isbot": "^3.6.8",
     "mongodb": "^6.3.0",
     "react": "^18.2.0",
     "react-bootstrap": "^2.9.1",
     "react-dom": "^18.2.0",
+    "remix-utils": "^7.1.0",
     "remix-validated-form": "^5.1.5",
+    "tiny-invariant": "^1.3.1",
     "zod": "^3.22.4"
   },
   "devDependencies": {

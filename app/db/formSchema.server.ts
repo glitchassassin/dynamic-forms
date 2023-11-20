@@ -10,16 +10,11 @@ interface FormSchema {
 /**
  * Get a form schema by ID, or return the first one
  */
-export async function getFormSchema(id?: string): Promise<FormSchema | null> {
+export async function getFormSchema(id: string): Promise<FormSchema | null> {
   const formsCollection = db.collection("forms");
-  let formSchema;
-  if (id) {
-    formSchema = await formsCollection.findOne<FormSchema>({
-      _id: new ObjectId(id),
-    });
-  } else {
-    formSchema = await formsCollection.findOne<FormSchema>();
-  }
+  const formSchema = await formsCollection.findOne<FormSchema>({
+    _id: new ObjectId(id),
+  });
   if (!formSchema) return formSchema;
   return {
     ...formSchema,
@@ -27,11 +22,24 @@ export async function getFormSchema(id?: string): Promise<FormSchema | null> {
   };
 }
 
+/**
+ * Get a form schema by ID, or return the first one
+ */
+export async function getFormSchemaList(): Promise<
+  Pick<FormSchema, "_id" | "name">[]
+> {
+  const formsCollection = db.collection("forms");
+  const cursor = formsCollection.find<Pick<FormSchema, "_id" | "name">>(
+    {},
+    { projection: { _id: 1, name: 1 } }
+  );
+  return await cursor.toArray();
+}
+
 export async function setFormSchema(
   form: FormSchema
 ): Promise<FormSchema | null> {
   const formsCollection = db.collection("forms");
-  console.log("setting", form);
   const { _id, ...rest } = form;
   if (_id) {
     await formsCollection.updateOne({ _id: new ObjectId(_id) }, { $set: rest });
