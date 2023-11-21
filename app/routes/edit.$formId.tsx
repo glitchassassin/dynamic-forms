@@ -1,23 +1,61 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { useLoaderData, useNavigation } from "@remix-run/react";
-import { withZod } from "@remix-validated-form/with-zod";
+import { useFetcher, useLoaderData } from "@remix-run/react";
+import type { IChangeEvent } from "@rjsf/core";
+import { type RJSFSchema } from "@rjsf/utils";
+import { useEffect, useState } from "react";
 import { Breadcrumb, Col, Container, Row } from "react-bootstrap";
-import { ValidatedForm, validationError } from "remix-validated-form";
+import { ClientOnly } from "remix-utils/client-only";
 import invariant from "tiny-invariant";
-import { z } from "zod";
-import { SubmitButton } from "~/components/SubmitButton";
-import { TextInput } from "~/components/TextInput";
-import { TextareaInput } from "~/components/TextareaInput";
+import { CustomForm } from "~/components/CustomForm";
 import { getFormSchema, setFormSchema } from "~/db/formSchema.server";
+import { serverValidator } from "~/validation/index.server";
 
-const validator = withZod(
-  z.object({
-    formId: z.string().optional(),
-    formName: z.string(),
-    formSchema: z.string(),
-  })
-);
+const schema: RJSFSchema = {
+  title: "Edit form",
+  description: "Edit the schema for the form",
+  type: "object",
+  required: ["name", "schema"],
+  properties: {
+    name: {
+      type: "string",
+      title: "Form Name",
+    },
+    schema: {
+      type: "string",
+      title: "Schema",
+    },
+    uiSchema: {
+      type: "string",
+      title: "UI Schema",
+    },
+    id: {
+      type: "string",
+      title: "ID",
+    },
+  },
+};
+
+const uiSchema = {
+  name: {
+    "ui:autofocus": true,
+  },
+  schema: {
+    "ui:enableMarkdownInDescription": true,
+    "ui:description":
+      "Paste the form's [JSON schema](https://rjsf-team.github.io/react-jsonschema-form/docs/json-schema/)",
+    "ui:widget": "textarea",
+  },
+  uiSchema: {
+    "ui:enableMarkdownInDescription": true,
+    "ui:description":
+      "Paste the form's [UI schema](https://rjsf-team.github.io/react-jsonschema-form/docs/api-reference/uiSchema/)",
+    "ui:widget": "textarea",
+  },
+  id: {
+    "ui:widget": "hidden",
+  },
+};
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const formId = params.formId;
@@ -27,25 +65,30 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   const result = await getFormSchema(formId);
 
   return json({
-    formId: result?._id ?? "",
-    formName: result?.name ?? "",
-    formSchema: result?.schema ?? "",
+    id: result?._id ?? "",
+    name: result?.name ?? "",
+    schema: result?.schema ?? "",
+    uiSchema: result?.uiSchema ?? "",
   });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const result = await validator.validate(await request.formData());
+  const result = await request.formData();
+  const data = result.get("data");
 
-  if (result.error) {
-    return validationError(result.error);
+  invariant(typeof data === "string", "Form data not found.");
+  const parsed = JSON.parse(data);
+
+  const validated = serverValidator.validateFormData(parsed, schema);
+  if (validated.errors?.length) {
+    return json({ errorSchema: validated.errorSchema }, { status: 400 });
   }
 
-  // commit form to MongoDB
-
   const formSchema = await setFormSchema({
-    _id: result.data.formId,
-    name: result.data.formName,
-    schema: result.data.formSchema,
+    _id: parsed.id,
+    name: parsed.name,
+    schema: parsed.schema,
+    uiSchema: parsed.uiSchema,
   });
 
   if (formSchema === null) {
@@ -56,8 +99,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function EditSchema() {
-  const navigation = useNavigation();
-  const { formId, formName, formSchema } = useLoaderData<typeof loader>();
+  const initialFormData = useLoaderData<typeof loader>();
+  const fetcher = useFetcher<typeof action>();
+  const [formData, setFormData] = useState<typeof initialFormData | undefined>(
+    initialFormData
+  );
+  const [extraErrors, setExtraErrors] = useState<any>();
+  const onSubmit = ({ formData }: IChangeEvent) => {
+    fetcher.submit({ data: JSON.stringify(formData) }, { method: "POST" });
+    setExtraErrors(undefined);
+  };
+
+  useEffect(() => {
+    if (fetcher.data && "errorSchema" in fetcher.data) {
+      setExtraErrors(fetcher.data.errorSchema);
+    }
+  }, [fetcher.data]);
 
   return (
     <Container>
@@ -66,35 +123,27 @@ export default function EditSchema() {
           <Breadcrumb>
             <Breadcrumb.Item href="/">Home</Breadcrumb.Item>
             <Breadcrumb.Item href="/edit">Edit Forms</Breadcrumb.Item>
-            <Breadcrumb.Item active>Edit {formName}</Breadcrumb.Item>
+            <Breadcrumb.Item active>Edit {formData?.name}</Breadcrumb.Item>
           </Breadcrumb>
         </Col>
       </Row>
       <Row>
         <Col>
-          <h1>Edit Schema</h1>
-        </Col>
-      </Row>
-      <Row>
-        <Col>
-          <ValidatedForm
-            validator={validator}
-            method="post"
-            defaultValues={{
-              formId,
-              formName,
-              formSchema,
-            }}
-          >
-            <input type="hidden" name="formId" value={formId} />
-            <TextInput name="formName" label="Form Name" className="mb-3" />
-            <TextareaInput
-              name="formSchema"
-              label="Form Schema"
-              className="font-monospace mb-3"
-            />
-            <SubmitButton label="Save" loading={navigation.state !== "idle"} />
-          </ValidatedForm>
+          <ClientOnly>
+            {() => (
+              <CustomForm
+                method="post"
+                schema={schema}
+                uiSchema={uiSchema}
+                formData={formData}
+                onChange={({ formData }) => setFormData(formData)}
+                extraErrors={extraErrors}
+                onSubmit={onSubmit}
+                noHtml5Validate={true}
+                disabled={fetcher.state !== "idle"}
+              />
+            )}
+          </ClientOnly>
         </Col>
       </Row>
     </Container>

@@ -1,14 +1,16 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import type { IChangeEvent } from "@rjsf/core";
-import Form from "@rjsf/core";
-import validator from "@rjsf/validator-ajv8";
 import { Breadcrumb, Col, Container, Row } from "react-bootstrap";
 import { ClientOnly } from "remix-utils/client-only";
 import invariant from "tiny-invariant";
+import { CustomForm } from "~/components/CustomForm";
 import { getFormSchema } from "~/db/formSchema.server";
-import { getFormSubmission } from "~/db/formSubmissions.server";
+import {
+  getFormSubmission,
+  setFormSubmission,
+} from "~/db/formSubmissions.server";
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const formId = params.formId;
@@ -28,8 +30,27 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   });
 };
 
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const formData = await request.formData();
+  const data = formData.get("data");
+  const formId = formData.get("formId");
+  invariant(typeof data === "string", "Form data not found.");
+  invariant(typeof formId === "string", "Form ID not found.");
+
+  const submission = await setFormSubmission({
+    schema: formId,
+    data: JSON.parse(data),
+  });
+
+  if (submission) return redirect(`/submit/${formId}/${submission._id}`);
+
+  console.log("could not find submission");
+
+  return null;
+};
+
 export default function SubmitForm() {
-  const { formId, name, schema, data = "{}" } = useLoaderData<typeof loader>();
+  const { formId, name, schema, data = {} } = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
   const onSubmit = ({ formData }: IChangeEvent<FormData>) => {
     fetcher.submit(
@@ -57,12 +78,11 @@ export default function SubmitForm() {
         <Col>
           <ClientOnly>
             {() => (
-              <Form
+              <CustomForm
                 method="post"
                 schema={JSON.parse(schema)}
-                validator={validator}
                 onSubmit={onSubmit}
-                formData={JSON.parse(data)}
+                formData={data}
               />
             )}
           </ClientOnly>

@@ -5,6 +5,7 @@ interface FormSchema {
   _id?: string;
   name: string;
   schema: string;
+  uiSchema: string;
 }
 
 /**

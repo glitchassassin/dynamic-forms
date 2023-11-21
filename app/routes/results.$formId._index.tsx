@@ -1,13 +1,13 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { useFetcher, useLoaderData } from "@remix-run/react";
-import type { IChangeEvent } from "@rjsf/core";
+import { useLoaderData } from "@remix-run/react";
 import { Breadcrumb, Col, Container, Row } from "react-bootstrap";
-import { ClientOnly } from "remix-utils/client-only";
 import invariant from "tiny-invariant";
-import { CustomForm } from "~/components/CustomForm";
 import { getFormSchema } from "~/db/formSchema.server";
-import { setFormSubmission } from "~/db/formSubmissions.server";
+import {
+  listFormSubmissions,
+  setFormSubmission,
+} from "~/db/formSubmissions.server";
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const formId = params.formId;
@@ -16,11 +16,12 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   const formSchema = await getFormSchema(formId);
   invariant(formSchema !== null, "Form schema not found.");
 
+  const submissions = await listFormSubmissions(formId);
+
   return json({
     formId: formSchema._id,
     name: formSchema.name,
-    schema: formSchema.schema,
-    uiSchema: formSchema.uiSchema,
+    submissions,
   });
 };
 
@@ -44,44 +45,35 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function SubmitForm() {
-  const { formId, schema, name, uiSchema } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher();
-  const onSubmit = ({ formData }: IChangeEvent<FormData>) => {
-    fetcher.submit(
-      { formId: formId ?? null, data: JSON.stringify(formData) },
-      { method: "POST" }
-    );
-  };
-  const parsedSchema = JSON.parse(schema);
-  const parsedUISchema = uiSchema ? JSON.parse(uiSchema) : {};
+  const { formId, name, submissions } = useLoaderData<typeof loader>();
+
   return (
     <Container>
       <Row>
         <Col>
           <Breadcrumb>
             <Breadcrumb.Item href="/">Home</Breadcrumb.Item>
-            <Breadcrumb.Item href="/submit">Submit Forms</Breadcrumb.Item>
-            <Breadcrumb.Item active>Submit {name}</Breadcrumb.Item>
+            <Breadcrumb.Item href="/results">View Results</Breadcrumb.Item>
+            <Breadcrumb.Item active>Submissions for {name}</Breadcrumb.Item>
           </Breadcrumb>
         </Col>
       </Row>
       <Row>
         <Col>
-          <h1>Submit {name}</h1>
+          <h1>Submissions for {name}</h1>
         </Col>
       </Row>
       <Row>
         <Col>
-          <ClientOnly>
-            {() => (
-              <CustomForm
-                method="post"
-                schema={parsedSchema}
-                uiSchema={parsedUISchema}
-                onSubmit={onSubmit}
-              />
-            )}
-          </ClientOnly>
+          <ul>
+            {submissions.map((submission) => (
+              <li key={submission._id}>
+                <a href={`/results/${formId}/${submission._id}`}>
+                  {submission._id}
+                </a>
+              </li>
+            ))}
+          </ul>
         </Col>
       </Row>
     </Container>

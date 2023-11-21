@@ -21,7 +21,7 @@ export default function Index() {
           <Link to="/submit/">Submit Forms</Link>
         </li>
         <li>
-          <Link to="/resuilts/">View Results</Link>
+          <Link to="/results/">View Results</Link>
         </li>
       </ul>
     </Container>

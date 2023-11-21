@@ -4,7 +4,15 @@ import { db } from "./index.server";
 interface FormSubmission {
   _id?: string;
   schema: string;
-  data: string;
+  data: any;
+}
+
+export async function listFormSubmissions(
+  schema: string
+): Promise<FormSubmission[]> {
+  const submissions = db.collection("formSubmissions");
+  const cursor = submissions.find<FormSubmission>({ schema });
+  return await cursor.toArray();
 }
 
 /**
@@ -13,6 +21,7 @@ interface FormSubmission {
 export async function getFormSubmission(
   id: string
 ): Promise<FormSubmission | null> {
+  console.log("formSubmission", id);
   const submissions = db.collection("formSubmissions");
   let formSubmission;
   if (id) {
